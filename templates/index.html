@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Schema Generator</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>ASK ME AI</h1>
+    <form id="promptForm">
+        <label for="prompt"></label>
+        <textarea id="prompt" name="prompt" rows="4" cols="50" placeholder="Ask me?"></textarea><br>
+        <button type="button" id="generateButton" onclick="submitPrompt()">Submit</button>
+        <button type="button" id="clearButton" onclick="clearChat()">Clear Chat</button>
+    </form>
+
+    <h2>ChatBox</h2>
+    <div id="conversationBox">
+        <!-- Chat history will appear here -->
+    </div>
+
+    <script>
+        // Track the conversation history
+        let conversationHistory = [];
+
+        async function submitPrompt() 
+        {
+            const prompt = document.getElementById('prompt').value;
+            const generateButton = document.getElementById('generateButton');
+            const conversationBox = document.getElementById('conversationBox');
+
+            if (!prompt) {
+                alert("Please enter a prompt.");
+                return;
+            }
+
+            // Update button state to "Generating..."
+            generateButton.disabled = true;
+            generateButton.textContent = "Generating...";
+
+            try {
+                const response = await axios.post('/generate-schema', { prompt });
+                const schema = response.data.schema;
+                const type = response.data.type || "default"; // Assume the server sends a "type" field
+
+                // Update conversation history
+                conversationHistory.push({ prompt, schema, type });
+
+                // Render conversation in the chat box
+                let conversationHTML = conversationHistory.map((entry, index) => {
+                    let contentClass = getContentClass(entry.type); // Determine the CSS class
+                    return `
+                        <div class="conversation-entry ${contentClass}">
+                            <p><strong>Q${index + 1}:</strong> ${entry.prompt}</p>
+                            <p><strong>A${index + 1}:</strong> ${formatContent(entry.schema, entry.type)}</p>
+                        </div>
+                        <hr>
+                    `;
+                }).join("");
+                conversationBox.innerHTML = conversationHTML;
+
+                // Clear the textarea for the next prompt
+                document.getElementById('prompt').value = "";
+            } 
+            catch (error) {
+                console.error(error);
+                alert("An error occurred while generating the schema.");
+            } 
+            finally {
+                // Restore button state
+                generateButton.disabled = false;
+                generateButton.textContent = "Submit";
+            }
+        }
+
+        function getContentClass(type) 
+        {
+            switch (type) {
+                case "joke":
+                    return "joke-content";
+                case "story":
+                    return "story-content";
+                case "code":
+                    return "code-content";
+                default:
+                    return "default-content";
+            }
+        }
+
+        function formatContent(content, type) 
+        {
+            if (type === "code") 
+            {
+                // Wrap code in a <pre><code> block for better formatting
+                return `<pre><code>${content}</code></pre>`;
+            }
+            return content; // Return content as-is for other types
+        }
+
+        function clearChat() {
+            const conversationBox = document.getElementById('conversationBox');
+            conversationBox.innerHTML = ""; // Clear the chat box display
+            conversationHistory = []; // Reset the conversation history
+            alert("Chat has been cleared!");
+        }
+    </script>
+</body>
+</html>
