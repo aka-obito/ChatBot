@@ -47,7 +47,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("ASK ME AI - The CHATBOT 🤖")
+st.title("The AI CHATBOT 🤖")
 
 # Initialize session state for managing the chat and buttons
 if "conversation_history" not in st.session_state:
